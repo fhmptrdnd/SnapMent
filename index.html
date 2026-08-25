@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapMent - Premium 4R Photobooth</title>
+    <meta name="description" content="Create, customize, and download high-quality 4R photobooth prints directly from your browser. Access your camera, apply filters, and upload custom PNG templates.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Animated background elements -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+
+    <!-- Camera flash element -->
+    <div id="flash-overlay" class="flash-overlay"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                    <circle cx="12" cy="13" r="3"/>
+                </svg>
+                <h1>Snap<span>Ment</span></h1>
+            </div>
+            <p class="subtitle">Snap the moment</p>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <!-- Left Panel: Camera & Capture -->
+            <section class="panel camera-panel glass">
+                <div class="panel-header">
+                    <span class="panel-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </span>
+                    <h2>Live Camera</h2>
+                </div>
+
+                <div class="video-container">
+                    <video id="webcam" autoplay playsinline muted></video>
+                    <!-- Fallback / Camera Permissions request -->
+                    <div id="camera-placeholder" class="camera-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                        </svg>
+                        <p>Camera access required</p>
+                        <button id="btn-start-camera" class="btn btn-primary">Grant Permission</button>
+                    </div>
+                    <!-- Countdown overlay -->
+                    <div id="countdown-overlay" class="countdown-overlay hidden">
+                        <button id="btn-restart-countdown" class="btn-restart-corner" title="Restart Countdown">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 1.4rem; height: 1.4rem; display: block;">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        <span id="countdown-number">3</span>
+                        <span id="countdown-prompt" class="countdown-prompt hidden">Press Space to Start</span>
+                    </div>
+                    <!-- Photo capturing prompt -->
+                    <div id="capture-status" class="capture-status hidden">
+                        Smile! Capturing photo <span id="current-photo-index">1</span> of <span id="total-photos-needed">4</span>
+                    </div>
+                </div>
+
+                <!-- Camera source selector & Toggle -->
+                <div class="control-row">
+                    <div class="select-wrapper">
+                        <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17L10 11 4 5M12 19h8"/></svg>
+                        <select id="camera-select">
+                            <option value="">Loading cameras...</option>
+                        </select>
+                    </div>
+                    <button id="btn-mirror" class="btn btn-secondary" title="Mirror video preview">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M20 5v14M4 5v14M12 2v20"/></svg>
+                        <span>Mirror</span>
+                    </button>
+                </div>
+
+                <!-- Session capture buttons -->
+                <div class="capture-actions">
+                    <button id="btn-capture-single" class="btn btn-secondary btn-icon-only" title="Take Single Shot">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <button id="btn-start-session" class="btn btn-primary btn-glow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>
+                        <span>Start Photobooth Session</span>
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filter-section">
+                    <h3>Photo Filter</h3>
+                    <div class="filter-grid">
+                        <button class="filter-btn active" data-filter="none">
+                            <span class="filter-preview filter-none"></span>
+                            <span class="filter-name">Normal</span>
+                        </button>
+                        <button class="filter-btn" data-filter="grayscale">
+                            <span class="filter-preview filter-grayscale"></span>
+                            <span class="filter-name">Mono</span>
+                        </button>
+                        <button class="filter-btn" data-filter="sepia">
+                            <span class="filter-preview filter-sepia"></span>
+                            <span class="filter-name">Sepia</span>
+                        </button>
+                        <button class="filter-btn" data-filter="vintage">
+                            <span class="filter-preview filter-vintage"></span>
+                            <span class="filter-name">Vintage</span>
+                        </button>
+                        <button class="filter-btn" data-filter="cool">
+                            <span class="filter-preview filter-cool"></span>
+                            <span class="filter-name">Cool Retro</span>
+                        </button>
+                        <button class="filter-btn" data-filter="warm">
+                            <span class="filter-preview filter-warm"></span>
+                            <span class="filter-name">Warm Neon</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Center Panel: Live Photobooth Canvas Preview -->
+            <section class="panel preview-panel glass">
+                <div class="panel-header">
+                    <span class="panel-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </span>
+                    <h2>Interactive 4R Canvas</h2>
+                    <div class="orientation-badge" id="canvas-orientation">Portrait 4R</div>
+                </div>
+
+                <!-- The Interactive Canvas Container -->
+                <div class="canvas-wrapper">
+                    <div id="photobooth-preview" class="photobooth-preview portrait-mode">
+                        <!-- slots will be dynamically generated by JS -->
+                        
+                        <!-- Uploaded template/frame overlay -->
+                        <div id="template-overlay-container" class="template-overlay-container">
+                            <img id="template-overlay-img" src="" alt="" class="hidden">
+                        </div>
+
+                        <!-- Canvas Guide grid/placeholders when no template is loaded -->
+                        <div id="canvas-grid-guide" class="canvas-grid-guide"></div>
+                    </div>
+                </div>
+
+                <!-- Adjustment Controls (Only visible when a slot is selected) -->
+                <div id="adjustment-controls" class="adjustment-controls disabled">
+                    <div class="adjustment-header">
+                        <span class="adjustment-title">Adjust Selected Photo (Slot <span id="selected-slot-num">-</span>)</span>
+                        <div class="header-buttons" style="display: flex; gap: 0.25rem; align-items: center; margin-left: auto;">
+                            <button id="btn-undo" class="btn btn-text" title="Undo Edit" disabled style="display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 0.9rem; height: 0.9rem;"><path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                                Undo
+                            </button>
+                            <button id="btn-redo" class="btn btn-text" title="Redo Edit" disabled style="display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 0.9rem; height: 0.9rem;"><path d="M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+                                Redo
+                            </button>
+                            <button id="btn-clear-slot" class="btn btn-text text-danger" title="Clear photo in this slot" style="display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 0.9rem; height: 0.9rem;"><path d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/></svg>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div class="control-sliders">
+                        <div class="slider-group">
+                            <label for="slider-zoom">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                                Zoom
+                            </label>
+                            <input type="range" id="slider-zoom" min="1" max="3" step="0.05" value="1" disabled>
+                        </div>
+                        <div class="slider-group">
+                            <label for="slider-rotate">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                Rotation
+                            </label>
+                            <input type="range" id="slider-rotate" min="-180" max="180" step="1" value="0" disabled>
+                        </div>
+                    </div>
+                    <p class="drag-hint">💡 Drag/swipe the photo directly on the canvas to reposition it.</p>
+                </div>
+            </section>
+
+            <!-- Right Panel: Configurations & Output -->
+            <section class="panel config-panel glass">
+                <!-- Layout Choice -->
+                <div class="config-group">
+                    <div class="panel-header">
+                        <span class="panel-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                        </span>
+                        <h2>Choose Layout</h2>
+                    </div>
+                    <div class="layout-options">
+                        <button class="layout-btn active" data-layout="double-strip">
+                            <span class="layout-icon layout-icon-double-strip"></span>
+                            <span class="layout-name">Double Strip</span>
+                        </button>
+                        <button class="layout-btn" data-layout="grid-2x2">
+                            <span class="layout-icon layout-icon-grid-2x2"></span>
+                            <span class="layout-name">2x2 Grid</span>
+                        </button>
+                        <button class="layout-btn" data-layout="triple-row">
+                            <span class="layout-icon layout-icon-triple-row"></span>
+                            <span class="layout-name">Triple Row</span>
+                        </button>
+                        <button class="layout-btn" data-layout="single">
+                            <span class="layout-icon layout-icon-single"></span>
+                            <span class="layout-name">Single Frame</span>
+                        </button>
+                        <button class="layout-btn" data-layout="double-frame">
+                            <span class="layout-icon layout-icon-double-frame"></span>
+                            <span class="layout-name">Double Frame</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template Upload / Presets -->
+                <div class="config-group">
+                    <div class="panel-header">
+                        <span class="panel-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                        </span>
+                        <h2>PNG Template</h2>
+                    </div>
+
+                    <!-- Drag & Drop Upload Zone -->
+                    <!-- Drag & Drop Upload Zone (Compact) -->
+                    <div id="upload-zone" class="upload-zone" style="padding: 0.65rem; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 12px;">
+                        <input type="file" id="template-file" accept="image/png" class="hidden-input">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1.25rem; height: 1.25rem; color: var(--accent-purple); flex-shrink: 0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                        <span style="font-size: 0.8rem; font-weight: 700;">Drag or Browse PNG Template</span>
+                    </div>
+
+                    <!-- Load from templates/ folder -->
+                    <div class="manual-template-load" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.75rem;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em;">Or Load from templates/ Folder</span>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="text" id="manual-template-name" style="flex: 1; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: var(--text-main); font-family: inherit; font-size: 0.85rem;" placeholder="e.g. wedding_frame.png">
+                            <button id="btn-load-manual-template" class="btn btn-secondary btn-sm" style="padding: 0.5rem 1rem; border-radius: 8px;">Load</button>
+                        </div>
+                    </div>
+
+                    <!-- Built-in Premium Frame Presets -->
+                    <div class="presets-section">
+                        <h3>Built-in Presets</h3>
+                        <div class="presets-grid">
+                            <button class="preset-btn active" data-preset="none">
+                                <span class="preset-indicator">None</span>
+                            </button>
+                            <button class="preset-btn" data-preset="classic-polaroid">
+                                <span class="preset-indicator">Polaroid</span>
+                            </button>
+                            <button class="preset-btn" data-preset="neon-cyber">
+                                <span class="preset-indicator">Neon Cyber</span>
+                            </button>
+                            <button class="preset-btn" data-preset="pastel-floral">
+                                <span class="preset-indicator">Pastel Floral</span>
+                            </button>
+                            <button class="preset-btn" data-preset="retro-comic">
+                                <span class="preset-indicator">Retro Comic</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export / Controls -->
+                <div class="config-group export-group" style="margin-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 1.25rem;">
+                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                        <button id="btn-download" class="btn btn-primary btn-sm btn-glow" disabled style="flex: 1.4; justify-content: center; padding: 0.65rem 0.5rem; border-radius: 10px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1rem; height: 1rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                            <span>Download 4R</span>
+                        </button>
+                        <button id="btn-reset" class="btn btn-danger btn-sm" style="flex: 1; justify-content: center; padding: 0.65rem 0.5rem; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1rem; height: 1rem;"><path d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/></svg>
+                            <span>Clear All</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Background Canvas for processing final 4R rendering (invisible) -->
+    <canvas id="offscreen-canvas" class="hidden"></canvas>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
