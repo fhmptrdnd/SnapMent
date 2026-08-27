@@ -1275,6 +1275,9 @@ function resetAllPhotoSlots(rebuildLayout = true) {
     adjustmentControls.classList.add('disabled');
     selectedSlotNumSpan.textContent = '-';
     
+    // Clear last uploaded link state on reset
+    lastUploadedFileUrl = '';
+    
     if (rebuildLayout) {
         buildCanvasLayout();
     }
@@ -1485,6 +1488,7 @@ if (btnUploadDrive) {
         try {
             const result = await uploadToGoogleDrive();
             if (result && result.success) {
+                lastUploadedFileUrl = result.fileUrl || '';
                 alert("✅ Berhasil diunggah ke Google Drive!");
             } else {
                 const errMsg = result && result.error ? result.error : "Koneksi gagal.";
@@ -1781,7 +1785,9 @@ window.addEventListener('load', () => {
 // Load configurations from localStorage
 let gasUrl = localStorage.getItem('snapment_gas_url') || '';
 let folderId = localStorage.getItem('snapment_folder_id') || '';
+let folderUrl = localStorage.getItem('snapment_folder_url') || '';
 let autoUpload = localStorage.getItem('snapment_auto_upload') === 'true';
+let lastUploadedFileUrl = '';
 
 // Settings elements
 const btnSettings = document.getElementById('btn-settings');
@@ -1791,6 +1797,7 @@ const settingsModal = document.getElementById('settings-modal');
 
 const inputGasUrl = document.getElementById('input-gas-url');
 const inputFolderId = document.getElementById('input-folder-id');
+const inputFolderUrl = document.getElementById('input-folder-url');
 const checkboxAutoUpload = document.getElementById('checkbox-auto-upload');
 
 // Completion modal elements
@@ -1801,9 +1808,20 @@ const uploadStatusText = document.getElementById('upload-status-text');
 const modalBtnDownload = document.getElementById('modal-btn-download');
 const modalBtnClose = document.getElementById('modal-btn-close');
 
+// QR modal elements
+const qrModal = document.getElementById('qr-modal');
+const btnCloseQr = document.getElementById('btn-close-qr');
+const btnCloseQrFooter = document.getElementById('btn-close-qr-footer');
+const qrCodeImg = document.getElementById('qr-code-img');
+const qrLink = document.getElementById('qr-link');
+
+const btnShowQr = document.getElementById('btn-show-qr');
+const modalBtnQr = document.getElementById('modal-btn-qr');
+
 function initSettings() {
     if (inputGasUrl) inputGasUrl.value = gasUrl;
     if (inputFolderId) inputFolderId.value = folderId;
+    if (inputFolderUrl) inputFolderUrl.value = folderUrl;
     if (checkboxAutoUpload) checkboxAutoUpload.checked = autoUpload;
 }
 
@@ -1815,6 +1833,10 @@ function saveSettings() {
     if (inputFolderId) {
         folderId = inputFolderId.value.trim();
         localStorage.setItem('snapment_folder_id', folderId);
+    }
+    if (inputFolderUrl) {
+        folderUrl = inputFolderUrl.value.trim();
+        localStorage.setItem('snapment_folder_url', folderUrl);
     }
     if (checkboxAutoUpload) {
         autoUpload = checkboxAutoUpload.checked;
@@ -1950,6 +1972,7 @@ async function triggerSessionCompletionFlow() {
         
         const result = await uploadToGoogleDrive();
         if (result && result.success) {
+            lastUploadedFileUrl = result.fileUrl || '';
             if (uploadStatusText) {
                 uploadStatusText.textContent = "✅ Berhasil diunggah ke Google Drive!";
                 uploadStatusText.style.color = "#10b981"; // success green
@@ -1962,4 +1985,56 @@ async function triggerSessionCompletionFlow() {
             }
         }
     }
+}
+
+// Open QR Modal and generate QR Code
+function openQrModal() {
+    // Priority: 1. Specific uploaded photo file URL, 2. Google Drive Folder URL
+    const targetUrl = lastUploadedFileUrl || folderUrl;
+    
+    if (!targetUrl) {
+        alert("Silakan atur URL Google Drive Anda di menu Settings (ikon gerigi kanan atas) terlebih dahulu.");
+        return;
+    }
+    
+    // Generate QR code using public goqr.me API
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(targetUrl)}`;
+    if (qrCodeImg) qrCodeImg.src = qrApiUrl;
+    if (qrLink) {
+        qrLink.href = targetUrl;
+        qrLink.textContent = targetUrl;
+    }
+    
+    if (qrModal) qrModal.classList.remove('hidden');
+}
+
+// Bind QR Code modal listeners
+if (btnCloseQr) {
+    btnCloseQr.addEventListener('click', () => {
+        if (qrModal) qrModal.classList.add('hidden');
+    });
+}
+if (btnCloseQrFooter) {
+    btnCloseQrFooter.addEventListener('click', () => {
+        if (qrModal) qrModal.classList.add('hidden');
+    });
+}
+if (qrModal) {
+    window.addEventListener('click', (e) => {
+        if (e.target === qrModal) {
+            qrModal.classList.add('hidden');
+        }
+    });
+}
+
+// Bind show QR buttons
+if (btnShowQr) {
+    btnShowQr.addEventListener('click', () => {
+        openQrModal();
+    });
+}
+if (modalBtnQr) {
+    modalBtnQr.addEventListener('click', () => {
+        openQrModal();
+    });
 }
