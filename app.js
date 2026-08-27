@@ -173,6 +173,7 @@ const templateFileInput = document.getElementById('template-file');
 const btnBrowseFile = document.getElementById('btn-browse-file');
 
 const btnDownload = document.getElementById('btn-download');
+const btnUploadDrive = document.getElementById('btn-upload-drive');
 const btnReset = document.getElementById('btn-reset');
 const offscreenCanvas = document.getElementById('offscreen-canvas');
 
@@ -775,9 +776,49 @@ function waitSpacebar() {
     });
 }
 
+// Helper to show custom confirmation modal
+function showConfirmModal() {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        const btnYes = document.getElementById('confirm-btn-yes');
+        const btnNo = document.getElementById('confirm-btn-no');
+        
+        modal.classList.remove('hidden');
+        
+        const handleYes = () => {
+            cleanup();
+            resolve(true);
+        };
+        
+        const handleNo = () => {
+            cleanup();
+            resolve(false);
+        };
+        
+        const cleanup = () => {
+            modal.classList.add('hidden');
+            btnYes.removeEventListener('click', handleYes);
+            btnNo.removeEventListener('click', handleNo);
+        };
+        
+        btnYes.addEventListener('click', handleYes);
+        btnNo.addEventListener('click', handleNo);
+    });
+}
+
 // Sequence execution
 async function runPhotoboothSession() {
     if (isSessionRunning) return;
+    
+    // Check if there are already photos captured in photoSlotsState
+    const hasCapturedPhotos = Object.keys(photoSlotsState).some(key => photoSlotsState[key] && photoSlotsState[key].imageSrc);
+    if (hasCapturedPhotos) {
+        const confirmResult = await showConfirmModal();
+        if (!confirmResult) {
+            return;
+        }
+    }
+    
     isSessionRunning = true;
     
     // Enter fullscreen live camera mode during the session
@@ -962,6 +1003,14 @@ async function runPhotoboothSession() {
         
         // Focus first slot automatically for user convenience
         selectSlot(0);
+        
+        // Trigger completion flow if session finished successfully with all photos filled
+        const checkLayout = getActiveLayout();
+        const checkPrimarySlots = checkLayout.slots.filter(s => s.duplicateOf === null);
+        const allSlotsFilled = checkPrimarySlots.every(slot => photoSlotsState[slot.id] && photoSlotsState[slot.id].imageSrc);
+        if (allSlotsFilled) {
+            triggerSessionCompletionFlow();
+        }
     }
 }
 
@@ -1017,6 +1066,7 @@ function toggleControlsDisable(disabled) {
     btnCaptureSingle.disabled = disabled;
     btnReset.disabled = disabled;
     btnDownload.disabled = disabled;
+    if (btnUploadDrive) btnUploadDrive.disabled = disabled;
     cameraSelect.disabled = disabled;
     
     layoutButtons.forEach(btn => btn.disabled = disabled);
@@ -1295,6 +1345,7 @@ function checkDownloadAvailability() {
     const allSlotsFilled = primarySlots.every(slot => photoSlotsState[slot.id] && photoSlotsState[slot.id].imageSrc);
     
     btnDownload.disabled = !allSlotsFilled;
+    if (btnUploadDrive) btnUploadDrive.disabled = !allSlotsFilled;
 }
 
 // ==========================================================================
@@ -1415,6 +1466,39 @@ btnDownload.addEventListener('click', async () => {
         checkDownloadAvailability();
     }
 });
+
+// Upload to Drive Trigger
+if (btnUploadDrive) {
+    btnUploadDrive.addEventListener('click', async () => {
+        if (!gasUrl) {
+            alert("URL Google Apps Script belum diatur. Silakan atur di menu Settings (ikon gerigi kanan atas).");
+            return;
+        }
+        
+        btnUploadDrive.disabled = true;
+        const oldText = btnUploadDrive.innerHTML;
+        btnUploadDrive.innerHTML = `
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: rotateLogo 1s infinite linear; width: 1rem; height: 1rem;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>Uploading...</span>
+        `;
+        
+        try {
+            const result = await uploadToGoogleDrive();
+            if (result && result.success) {
+                alert("✅ Berhasil diunggah ke Google Drive!");
+            } else {
+                const errMsg = result && result.error ? result.error : "Koneksi gagal.";
+                alert(`❌ Gagal mengunggah ke Google Drive: ${errMsg}`);
+            }
+        } catch (err) {
+            console.error("Manual upload failed:", err);
+            alert(`❌ Gagal mengunggah ke Google Drive: ${err.message || err}`);
+        } finally {
+            btnUploadDrive.innerHTML = oldText;
+            checkDownloadAvailability();
+        }
+    });
+}
 
 // ==========================================================================
 // Custom Template Upload & Auto-Orientation Module
@@ -1685,4 +1769,197 @@ window.addEventListener('load', () => {
     
     // Save initial state to history stack
     saveStateToHistory();
+    
+    // Initialize settings from localStorage
+    initSettings();
 });
+
+// ==========================================================================
+// Google Drive Upload & Settings Integration
+// ==========================================================================
+
+// Load configurations from localStorage
+let gasUrl = localStorage.getItem('snapment_gas_url') || '';
+let folderId = localStorage.getItem('snapment_folder_id') || '';
+let autoUpload = localStorage.getItem('snapment_auto_upload') === 'true';
+
+// Settings elements
+const btnSettings = document.getElementById('btn-settings');
+const btnCloseSettings = document.getElementById('btn-close-settings');
+const btnSaveSettings = document.getElementById('btn-save-settings');
+const settingsModal = document.getElementById('settings-modal');
+
+const inputGasUrl = document.getElementById('input-gas-url');
+const inputFolderId = document.getElementById('input-folder-id');
+const checkboxAutoUpload = document.getElementById('checkbox-auto-upload');
+
+// Completion modal elements
+const completionModal = document.getElementById('completion-modal');
+const completionStatusText = document.getElementById('completion-status-text');
+const driveUploadStatus = document.getElementById('drive-upload-status');
+const uploadStatusText = document.getElementById('upload-status-text');
+const modalBtnDownload = document.getElementById('modal-btn-download');
+const modalBtnClose = document.getElementById('modal-btn-close');
+
+function initSettings() {
+    if (inputGasUrl) inputGasUrl.value = gasUrl;
+    if (inputFolderId) inputFolderId.value = folderId;
+    if (checkboxAutoUpload) checkboxAutoUpload.checked = autoUpload;
+}
+
+function saveSettings() {
+    if (inputGasUrl) {
+        gasUrl = inputGasUrl.value.trim();
+        localStorage.setItem('snapment_gas_url', gasUrl);
+    }
+    if (inputFolderId) {
+        folderId = inputFolderId.value.trim();
+        localStorage.setItem('snapment_folder_id', folderId);
+    }
+    if (checkboxAutoUpload) {
+        autoUpload = checkboxAutoUpload.checked;
+        localStorage.setItem('snapment_auto_upload', autoUpload ? 'true' : 'false');
+    }
+    
+    if (settingsModal) settingsModal.classList.add('hidden');
+}
+
+// Bind Settings listeners
+if (btnSettings) {
+    btnSettings.addEventListener('click', () => {
+        initSettings();
+        if (settingsModal) settingsModal.classList.remove('hidden');
+    });
+}
+if (btnCloseSettings) {
+    btnCloseSettings.addEventListener('click', () => {
+        if (settingsModal) settingsModal.classList.add('hidden');
+    });
+}
+if (btnSaveSettings) {
+    btnSaveSettings.addEventListener('click', saveSettings);
+}
+if (settingsModal) {
+    window.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            settingsModal.classList.add('hidden');
+        }
+    });
+}
+
+// Bind Completion Modal listeners
+if (modalBtnDownload) {
+    modalBtnDownload.addEventListener('click', async () => {
+        modalBtnDownload.disabled = true;
+        const oldText = modalBtnDownload.innerHTML;
+        modalBtnDownload.innerHTML = `
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: rotateLogo 1s infinite linear; width: 1rem; height: 1rem;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>Downloading...</span>
+        `;
+        try {
+            await renderHighRes4RPrint();
+            const dataUrl = offscreenCanvas.toDataURL('image/jpeg', 0.98);
+            const link = document.createElement('a');
+            link.download = `SnapMent_4R_${Date.now()}.jpg`;
+            link.href = dataUrl;
+            link.click();
+        } catch (e) {
+            console.error("Print generation failed:", e);
+            alert("Failed to generate download. Please try again.");
+        } finally {
+            modalBtnDownload.innerHTML = oldText;
+            modalBtnDownload.disabled = false;
+        }
+    });
+}
+
+if (modalBtnClose) {
+    modalBtnClose.addEventListener('click', () => {
+        if (completionModal) completionModal.classList.add('hidden');
+    });
+}
+
+// Google Drive Upload function
+async function uploadToGoogleDrive() {
+    if (!gasUrl) {
+        return { success: false, error: "URL Google Apps Script belum diatur." };
+    }
+    
+    try {
+        await renderHighRes4RPrint();
+        const dataUrl = offscreenCanvas.toDataURL('image/jpeg', 0.98);
+        
+        // POST to Google Apps Script Web App
+        const response = await fetch(gasUrl, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8', // Bypass CORS preflight request
+            },
+            body: JSON.stringify({
+                image: dataUrl,
+                filename: `SnapMent_4R_${Date.now()}.jpg`,
+                folderId: folderId
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        return result;
+    } catch (err) {
+        console.error("Google Drive upload error:", err);
+        return { success: false, error: err.message || err };
+    }
+}
+
+// Trigger completion modal and upload flow
+async function triggerSessionCompletionFlow() {
+    if (completionModal) {
+        completionModal.classList.remove('hidden');
+    }
+    if (completionStatusText) {
+        completionStatusText.textContent = "Foto Anda telah siap. Klik tombol di bawah untuk mengunduh hasil foto.";
+    }
+    
+    if (driveUploadStatus) {
+        driveUploadStatus.classList.add('hidden');
+    }
+    
+    if (autoUpload) {
+        if (!gasUrl) {
+            if (driveUploadStatus) {
+                driveUploadStatus.classList.remove('hidden');
+            }
+            if (uploadStatusText) {
+                uploadStatusText.textContent = "⚠️ Auto-upload aktif, silakan atur URL Apps Script di Settings.";
+                uploadStatusText.style.color = "#eab308"; // warning yellow
+            }
+            return;
+        }
+        
+        if (driveUploadStatus) {
+            driveUploadStatus.classList.remove('hidden');
+        }
+        if (uploadStatusText) {
+            uploadStatusText.textContent = "Mengunggah hasil foto ke Google Drive...";
+            uploadStatusText.style.color = ""; // reset
+        }
+        
+        const result = await uploadToGoogleDrive();
+        if (result && result.success) {
+            if (uploadStatusText) {
+                uploadStatusText.textContent = "✅ Berhasil diunggah ke Google Drive!";
+                uploadStatusText.style.color = "#10b981"; // success green
+            }
+        } else {
+            const errMsg = result && result.error ? result.error : "Terjadi kesalahan koneksi.";
+            if (uploadStatusText) {
+                uploadStatusText.textContent = `❌ Gagal mengunggah ke Drive: ${errMsg}`;
+                uploadStatusText.style.color = "#ef4444"; // error red
+            }
+        }
+    }
+}

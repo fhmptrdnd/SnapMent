@@ -22,15 +22,20 @@
 
     <div class="app-container">
         <!-- Header -->
-        <header class="app-header">
-            <div class="logo">
-                <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                    <circle cx="12" cy="13" r="3"/>
-                </svg>
-                <h1>Snap<span>Ment</span></h1>
+        <header class="app-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div style="display: flex; flex-direction: column;">
+                <div class="logo">
+                    <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                        <circle cx="12" cy="13" r="3"/>
+                    </svg>
+                    <h1>Snap<span>Ment</span></h1>
+                </div>
+                <p class="subtitle">Snap the moment</p>
             </div>
-            <p class="subtitle">Snap the moment</p>
+            <button id="btn-settings" class="btn btn-secondary btn-icon-only" title="Google Drive Settings" style="width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.2s ease;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1.25rem; height: 1.25rem;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
         </header>
 
         <!-- Main Workspace -->
@@ -282,6 +287,10 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1rem; height: 1rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                             <span>Download 4R</span>
                         </button>
+                        <button id="btn-upload-drive" class="btn btn-secondary btn-sm" disabled style="flex: 1.2; justify-content: center; padding: 0.65rem 0.5rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1rem; height: 1rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                            <span>Upload Drive</span>
+                        </button>
                         <button id="btn-reset" class="btn btn-danger btn-sm" style="flex: 1; justify-content: center; padding: 0.65rem 0.5rem; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1rem; height: 1rem;"><path d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/></svg>
                             <span>Clear All</span>
@@ -294,6 +303,80 @@
 
     <!-- Background Canvas for processing final 4R rendering (invisible) -->
     <canvas id="offscreen-canvas" class="hidden"></canvas>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="custom-modal hidden">
+        <div class="modal-content glass animate-pop">
+            <div class="modal-header">
+                <h2>Google Drive Upload Settings</h2>
+                <button id="btn-close-settings" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="input-gas-url">Apps Script Web App URL:</label>
+                    <input type="text" id="input-gas-url" placeholder="https://script.google.com/macros/s/.../exec">
+                </div>
+                <div class="form-group">
+                    <label for="input-folder-id">Target Folder ID (Optional):</label>
+                    <input type="text" id="input-folder-id" placeholder="Google Drive Folder ID">
+                    <small>Leave blank to use default folder defined in Apps Script.</small>
+                </div>
+                <div class="form-group checkbox-group" style="margin-top: 0.5rem;">
+                    <input type="checkbox" id="checkbox-auto-upload">
+                    <label for="checkbox-auto-upload">Auto-upload to Google Drive on session finish</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-save-settings" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.75rem;">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Completion Modal -->
+    <div id="completion-modal" class="custom-modal hidden">
+        <div class="modal-content glass text-center animate-pop">
+            <div class="completion-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+            <h2 class="modal-title">Sesi Foto Selesai!</h2>
+            <p id="completion-status-text" class="modal-description">Menyiapkan foto Anda...</p>
+            
+            <div id="drive-upload-status" class="drive-status hidden">
+                <span class="spinner"></span>
+                <span id="upload-status-text">Mengunggah ke Google Drive...</span>
+            </div>
+
+            <div class="modal-actions-vertical">
+                <button id="modal-btn-download" class="btn btn-primary btn-glow w-full" style="justify-content: center; padding: 0.75rem;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1rem; height: 1rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span>Download Hasil Foto</span>
+                </button>
+                <button id="modal-btn-close" class="btn btn-secondary w-full" style="justify-content: center; padding: 0.75rem;">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Confirmation Modal -->
+    <div id="confirm-modal" class="custom-modal hidden">
+        <div class="modal-content glass text-center animate-pop">
+            <div class="confirm-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
+            <h2 class="modal-title">Mulai Sesi Baru?</h2>
+            <p class="modal-description">Foto dari sesi sebelumnya akan terhapus. Apakah Anda yakin ingin memulai sesi foto baru?</p>
+            <div class="modal-actions">
+                <button id="confirm-btn-yes" class="btn btn-danger" style="justify-content: center; padding: 0.75rem;">Ya, Mulai Baru</button>
+                <button id="confirm-btn-no" class="btn btn-secondary" style="justify-content: center; padding: 0.75rem;">Batal</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="app.js"></script>
